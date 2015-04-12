@@ -1,12 +1,60 @@
 /**
  * Created by Andrew on 4/11/2015.
  */
+var pixelDataRef = new Firebase('https://firesnakes.firebaseio.com/');
+var direction = 'right';
+var curX=2;
+var curY=2;
+var speed=0.25;
+
+setInterval(function(){
+    moveSnake(direction);
+    console.log("moving "+this.direction +' '+this.curX+' '+this.curY);
+}, 500*speed);
+
+var moveSnake = function(d){
+    if(d == 'up'){
+        this.curY -=1;
+    }
+    else if(d =='down'){
+        this.curY +=1;
+    }
+    else if(d == 'left'){
+        this.curX -=1;
+    }
+    else if (d == 'right'){
+        this.curX +=1;
+    }
+    pixelDataRef.child(curX + ":" + curY).set('000');
+};
+
+document.onkeydown =function (e) {
+    console.log(e.keyCode);
+    e = e || window.event;
+
+    if (e.keyCode == '38') {
+        direction = 'up';
+    }
+    else if (e.keyCode == '40') {
+        // down arrow
+        direction = 'down';
+    }
+    else if (e.keyCode == '37') {
+        // left arrow
+        direction = 'left';
+    }
+    else if (e.keyCode == '39') {
+        // right arrow
+        direction = 'right';
+    }
+};
+
 $(document).ready(function () {
     //Set up some globals
-    var pixSize = 8, lastPoint = null, currentColor = "000", mouseDown = 0;
+    var pixSize = 3, lastPoint = null, currentColor = "000", mouseDown = 0;
 
     //Create a reference to the pixel data for our drawing.
-    var pixelDataRef = new Firebase('https://firesnakes.firebaseio.com/');
+
 
     // Set up our canvas
     var myCanvas = document.getElementById('drawing-canvas');
@@ -69,6 +117,13 @@ $(document).ready(function () {
     $(myCanvas).mousemove(drawLineOnMouseMove);
     $(myCanvas).mousedown(drawLineOnMouseMove);
 
+
+
+    $('#delete').click(function(){
+        pixelDataRef.remove();
+    });
+
+
     // Add callbacks that are fired any time the pixel data changes and adjusts the canvas appropriately.
     // Note that child_added events will be fired for initial pixel data as well.
     var drawPixel = function(snapshot) {
@@ -83,4 +138,6 @@ $(document).ready(function () {
     pixelDataRef.on('child_added', drawPixel);
     pixelDataRef.on('child_changed', drawPixel);
     pixelDataRef.on('child_removed', clearPixel);
+
+
 });
