@@ -1,6 +1,18 @@
 /**
  * Created by Andrew on 4/11/2015.
  */
+
+var app = angular.module("mainApp", ["firebase"]);
+
+
+app.controller("mainApp", function($scope, $firebaseObject) {
+    var ref = new Firebase("https://firesnakes.firebaseio.com/");
+    // download the data into a local object
+    $scope.data = $firebaseObject(ref);
+    var syncObject = $firebaseObject(ref);
+    syncObject.$bindTo($scope, "data");
+    // putting a console.log here won't work, see below
+});
 var direction = 'right';
 var curX=2;
 var curY=2;
