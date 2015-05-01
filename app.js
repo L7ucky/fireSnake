@@ -6,6 +6,7 @@ var curX=2;
 var curY=2;
 var speed=0.25;
 var fb={};
+var myID=0;
 fb.main =new Firebase('https://firesnakes.firebaseio.com/');
 var mySnake = [];
 var me ={
@@ -211,6 +212,7 @@ $(document).ready(function () {
         allEnemySnakes[newSnake.name]=newSnake;
         console.log(snap);
     };
+
     var updateEnemySnake = function(snap){
         for(snake in allEnemySnakes){
             if(snake.name === snap.key()){
@@ -219,10 +221,22 @@ $(document).ready(function () {
             }
         }
     };
+
     var clearEnemySnake = function(snap){
         console.log('clearEnemySanke');
         console.log(snap);
     };
+
+    var generateID = function() {
+        function s4() {
+            return Math.floor((1 + Math.random()) * 0x10000)
+                .toString(16)
+                .substring(1);
+        }
+        return s4() + s4() + '-' + s4() + '-' + s4() + '-' +
+            s4() + '-' + s4() + s4() + s4();
+    };
+    myID = generateID();
 
     fb.main.on('child_added', drawPixel);
     fb.main.on('child_changed', drawPixel);
@@ -231,11 +245,13 @@ $(document).ready(function () {
 
     fb.snakes = fb.main.child('snakes');
 
-    fb.me = fb.snakes.push({
+    fb.me = fb.snakes.child(myID);
+    fb.me.set({
         'color': me.color,
         'length': me.length
         });
     fb.me.body = fb.me.child('body');
+    fb.me.onDisconnect().remove();
     fb.me.body.child(curX + ":" + curY).set(me.color);
     //Draw the fruit
     fb.main.child("10:10").set('0f0');
