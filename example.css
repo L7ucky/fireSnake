@@ -179,7 +179,23 @@
 /* Tetris */
 .tetris-body {
     width: 600px; }
-
+#delete{
+    outline:none;
+    margin: 5px;
+    border: none;
+    border-radius: 15px;
+    background-color: #3f19fa;
+    width:90px;
+}
+#delete:hover{
+    border: none;
+    background-color: #776ffa;
+}
+#delete:active{
+    outline:none;
+    border: none;
+    background-color: #776ffa;
+}
 #canvas0, #canvas1 {
     display: inline-block;
     border: 4px solid #424547; }

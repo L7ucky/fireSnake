@@ -7,6 +7,7 @@ var app = angular.module("mainApp", ["firebase"]);
 
 app.controller("mainApp", function($scope, $firebaseObject) {
     var ref = new Firebase("https://firesnakes.firebaseio.com/");
+    console.log("Got inside the controller and about to attempt the data bind")
     // download the data into a local object
     $scope.data = $firebaseObject(ref);
     var syncObject = $firebaseObject(ref);
@@ -16,7 +17,8 @@ app.controller("mainApp", function($scope, $firebaseObject) {
 var direction = 'right';
 var curX=2;
 var curY=2;
-var speed=0.25;
+var speed=125;
+var grow = false;
 var fb={};
 var myID=0;
 fb.main =new Firebase('https://firesnakes.firebaseio.com/');
@@ -27,50 +29,51 @@ var me ={
     body:[curX+':'+curY],
     head:'2:2'
 };
-var fruit =['10:10'];
-var allEnemySnakes = [];
+
 
 var myStartPoint = function(){
     return '2:2';
 };
 
-
-
-setInterval(function(){
+var interval = setInterval(function(){
     moveSnake(direction);
-    console.log("moving "+this.direction +' '+this.curX+' '+this.curY);
-}, 500*speed);
+    console.log(speed);
+}, speed);
 
-var drawSnake = function(){
-    mySnake.push(curX + ":" + curY);
-};
-
-var eatFruit = function(){
-    mySnake.splice(0,0,curX + ":" + curY);
-};
+var resetInterval = function(newSpeed){
+    clearInterval(interval);
+    interval = setInterval(function(){
+        moveSnake(direction);
+    }, newSpeed);
+}
 
 var removeTail = function(){
-    console.log("Removetail pixel: "+me.body[0]);
-    fb.me.body.child(me.body[0]).remove();
-    me.body.splice(0, 1);
-};
-
-var checkIfEatsFruit = function(x, y){
-    for(f in fruit){
-        var fruitArray = fruit[f].split(':');
-        if(fruitArray[0] == x && fruitArray[1] == y)
-            return true;
-        return false;
+    if(!grow) {
+        fb.me.body.child(me.body[0]).remove();
+        me.body.splice(0, 1);
     }
+    else
+        grow = false;
 };
 
-var makeNewFruit = function(){
-    var x = Math.floor(Math.random()*100);
-    var y = Math.floor(Math.random()*100);
-    fruit[0]=x+':'+y;
-    fb.main.child(x+':'+y).set('0F0');
-};
+//var checkIfEatsFruit = function(x, y){
+//    for(f in fruit){
+//        var fruitArray = fruit[f].split(':');
+//        if(fruitArray[0] == x && fruitArray[1] == y)
+//            return true;
+//        return false;
+//    }
+//};
 
+//var makeNewFruit = function(){
+//    var x = Math.floor(Math.random()*100);
+//    var y = Math.floor(Math.random()*100);
+//    fb.fruit.child(x+':'+y).set('0F0');
+//};
+var changeLength = function(snap){
+    if(snap.val() > me.length)
+        grow = true;
+};
 var moveSnake = function(d){
     if(d == 'up'){
         this.curY -=1;
@@ -86,42 +89,61 @@ var moveSnake = function(d){
     }
     me.body.push(curX + ":" + curY);
     fb.me.body.child(curX + ":" + curY).set(me.color);
+    removeTail();
 
-    if(!checkIfEatsFruit(curX,curY))
-        removeTail();
-    else{
-        makeNewFruit()
-    }
 };
 
 
 document.onkeydown =function (e) {
-    console.log(e.keyCode);
     e = e || window.event;
 
-    if (e.keyCode == '38') {
+
+    if (e.keyCode == '87') {
+        // w
         direction = 'up';
+    }
+    else if (e.keyCode == '83') {
+        // s
+        direction = 'down';
+    }
+    else if (e.keyCode == '65') {
+        // a
+        direction = 'left';
+    }
+    else if (e.keyCode == '68') {
+        // d
+        direction = 'right';
     }
     else if (e.keyCode == '40') {
         // down arrow
-        direction = 'down';
+        if(speed<1000) {
+            speed *= 1.25;
+            resetInterval(speed);
+        }
     }
-    else if (e.keyCode == '37') {
-        // left arrow
-        direction = 'left';
+    else if (e.keyCode == '38') {
+        // up arrow
+        if(speed>40){
+            speed*=0.75;
+            resetInterval(speed);
+        }
+
     }
-    else if (e.keyCode == '39') {
-        // right arrow
-        direction = 'right';
-    }
+    //else if (e.keyCode == '37') {
+    //    // left arrow
+    //    direction = 'left';
+    //}
+    //else if (e.keyCode == '39') {
+    //    // right arrow
+    //    direction = 'right';
+    //}
+
 };
 
 
 $(document).ready(function () {
     //Set up some globals
     var pixSize = 3, lastPoint = null, currentColor = "000", mouseDown = 0;
-
-    //Create a reference to the pixel data for our drawing.
 
 
     // Set up our canvas
@@ -201,42 +223,29 @@ $(document).ready(function () {
         myContext.fillRect(parseInt(coords[0]) * pixSize, parseInt(coords[1]) * pixSize, pixSize, pixSize);
     };
     var clearPixel = function(snapshot) {
-        console.log("Clearing pixel: "+snapshot.val());
         var coords = snapshot.key().split(":");
         myContext.clearRect(parseInt(coords[0]) * pixSize, parseInt(coords[1]) * pixSize, pixSize, pixSize);
     };
 
-
-    var addEnemySnake = function(snap){
-        var sRef =fb.snakes.child(snap.key());
-
-        sRef.child('body').on('child_added', drawPixel);
-        sRef.child('body').on('child_changed', drawPixel);
-        sRef.child('body').on('child_removed', clearPixel);
-        console.log('addEnemySnake');
-        var newSnake ={
-            name:snap.key(),
-            color:snap.val().color,
-            length:snap.val().length,
-            body:snap.val().body,
-            head:snap.val().head
-        };
-        allEnemySnakes[newSnake.name]=newSnake;
-        console.log(snap);
+    var snakeAdded = function(snap){
+        var named = snap.key();
+        fb.snakes[named] = fb.snakes.child(named);
+        fb.snakes[named].body = fb.snakes[named].child('body');
+        fb.snakes[named].body.on('child_added', drawPixel);
+        fb.snakes[named].body.on('child_changed', drawPixel);
+        fb.snakes[named].body.on('child_removed', clearPixel);
+        fb.snakes[named].onDisconnect().remove();
+    };
+    var addSnake = function(snap){
+        drawPixel(snap);
     };
 
-    var updateEnemySnake = function(snap){
-        for(snake in allEnemySnakes){
-            if(snake.name === snap.key()){
-                console.log('updateEnemySnake:');
-                console.log(snap.key());
-            }
-        }
+    var changeSnake = function(snap){
+        drawPixel(snap);
     };
 
-    var clearEnemySnake = function(snap){
-        console.log('clearEnemySanke');
-        console.log(snap);
+    var removeSnake = function(snap){
+        clearPixel(snap);
     };
 
     var generateID = function() {
@@ -248,28 +257,40 @@ $(document).ready(function () {
         return s4() + s4() + '-' + s4() + '-' + s4() + '-' +
             s4() + '-' + s4() + s4() + s4();
     };
-    myID = generateID();
+    var _init = function(){
 
-    fb.main.on('child_added', drawPixel);
-    fb.main.on('child_changed', drawPixel);
-    fb.main.on('child_removed', clearPixel);
+        myID = generateID();
+
+        //fb.main.on('child_added', drawPixel);
+        //fb.main.on('child_changed', drawPixel);
+        //fb.main.on('child_removed', clearPixel);
 
 
-    fb.snakes = fb.main.child('snakes');
+        fb.snakes = fb.main.child('snakes');
+        fb.snakes.on('child_added',snakeAdded);
+        fb.snakes.body = fb.snakes.child('body');
+        fb.food = fb.main.child('food');
 
-    fb.me = fb.snakes.child(myID);
-    fb.me.set({
-        'color': me.color,
-        'length': me.length
+        fb.me = fb.snakes.child(myID);
+        fb.me.body = fb.me.child('body');
+
+        fb.me.set({
+            'color': me.color,
+            'length': me.length
         });
-    fb.me.body = fb.me.child('body');
-    fb.me.onDisconnect().remove();
-    fb.me.body.child(curX + ":" + curY).set(me.color);
-    //Draw the fruit
-    fb.main.child("10:10").set('0f0');
-    fb.snakes.on('child_added', addEnemySnake);
-    fb.snakes.on('child_changed', updateEnemySnake);
-    fb.snakes.on('child_removed', clearEnemySnake);
+        fb.me.length = fb.me.child('length');
+        fb.me.length.on('child_changed',changeLength);
+        fb.me.onDisconnect().remove();
+        fb.me.body.child(curX + ":" + curY).set(me.color);
+        //Draw the fruit
+
+        fb.food.on('child_added',drawPixel);
+        fb.food.on('child_removed',clearPixel);
+        fb.snakes.body.on('child_added', addSnake);
+        fb.snakes.body.on('child_changed', changeSnake);
+        fb.snakes.body.on('child_removed', removeSnake);
+    };
 
 
+    _init();
 });
