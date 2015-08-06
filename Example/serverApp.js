@@ -8,7 +8,8 @@ var Firebase = require('firebase');
 
 //Lets define a port we want to listen to
 const PORT=8080;
-
+const X_MAX_WINDOW = 60;
+const Y_MAX_WINDOW = 60;
 
 //Lets use our dispatcher
 function handleRequest(request, response){
@@ -56,42 +57,110 @@ var fbRef = new Firebase("https://firesnakes.firebaseio.com/");
 var snakes ={};
 var food = {};
 var refs = {};
+refs.snakes = fbRef.child("snakes");
+refs.food = fbRef.child("food");
+refs.food.onDisconnect().remove();
 
-
-//fb.once("value", function(snap){
-//    fb = snap.val();
+//fbRef.once("value", function(snap){
+//    fbRef = snap.val();
 //});
+var setUpSnakeRefs = function(fireSnake,key){
+    refs.snakes[key].color = fireSnake.child("color");
+    fireSnake.color.on("value", function(snap) {
+        snakes[key].color = snap.val();
+    });
 
-fb.child("snakes").on("child_added", function(snapshot) {
 
-    console.log(snapshot.val());
-});
+    refs.snakes[key].length = fireSnake.child("length");
+    fireSnake.length.on("value", function(snap){
+        console.log("length value is: "+snap.val());
+        console.log("length key is: "+snap.key());
+        console.log(" key is: "+key);
+        snakes[key].length = snap.val();
+        console.log(" snakes.length  is: "+snakes[key].length);
+    });
 
-fb.child("food").on("value",function(snap){
-    if(!snap.val()){
-        console.log("There were no seeds");
-        fb.child("food").set({"20:20":'A80'});
-    }
-    else{
-        console.log("there were values in food");
-    }
-});
-
-var checkIfEatsFruit = function(x, y){
-    for(f in fruit){
-        var fruitArray = fruit[f].split(':');
-        if(fruitArray[0] == x && fruitArray[1] == y)
-            return true;
-        return false;
-    }
+    refs.snakes[key].body = fireSnake.child("body");
+    fireSnake.body.on("child_added", function(snap){
+        //console.log(key+" moved to\t"+snap.key());
+        handleFood(snap.key(), fireSnake, key);
+    });
+    refs.snakes[key].onDisconnect(function(){
+        fireSnake = null;
+    });
 };
 
-if(!checkIfEatsFruit(curX,curY))
-    removeTail();
-else{
-    makeNewFruit()
-}
-setTimeout(function(){
-    if(fruit.length <1)
-        makeNewFruit();
-},3000);
+refs.snakes.on("child_added", function(snapshot) {
+    refs.snakes[snapshot.key()] = refs.snakes.child(snapshot.key());
+    console.log(snapshot.key()+" is set as:\n\n"+snapshot.val());
+    snakes[snapshot.key()] = snapshot.val();
+
+    setUpSnakeRefs(refs.snakes[snapshot.key()],snapshot.key());
+    makefood();
+
+});
+
+refs.snakes.on("child_removed", function(snapshot) {
+    console.log(snapshot.key() +"was REMOVED!");
+    snakes[snapshot.key()]= null;
+
+});
+
+refs.food.on("child_removed",function(snap){
+    if(needMoreFood(snap.val())){
+        console.log("FOOD UPDATE: \tFood needed now!");
+        makefood();
+    }
+    else{
+        console.log("FOOD UPDATE: \tNo food needed now...");
+    }
+});
+
+var needMoreFood = function(numOfFood){
+    if(numOfFood < Object.keys(food).length)
+        return true;
+    return false;
+};
+
+var handleFood = function(coords, fireSnake,snakeKey){
+    if(checkIfEatsFood(coords)){
+        console.log(snakeKey+" eats food at: "+coords);
+        console.log(snakeKey+" grows to be length: "+(snakes[snakeKey].length+1));
+        fireSnake.child("length").set(snakes[snakeKey].length+1);
+        refs.food.child(coords).remove();
+        food[coords] = null;
+        makefood();
+    }
+};
+var checkIfEatsFood = function(coords){
+    if(food[coords])
+        return true;
+    //console.log("\t\t\tNOPE NO FOOD HERE");
+    return false;
+};
+var makefood = function() {
+    var coords="";
+    var color = "8F0";
+    var spaceTaken = true;
+    while(spaceTaken){
+        
+        coords += Math.floor((1 + Math.random()) * 10000) % X_MAX_WINDOW;
+        coords += ":";
+        coords += Math.floor((1 + Math.random()) * 10000) % Y_MAX_WINDOW;
+        if(!food[coords])
+            spaceTaken = false;
+    }
+    console.log("FOOD UPDATE: \tMade food at: \t"+coords);
+    refs.food.child(coords).set(color);
+    food[coords] = color;
+    return coords;
+};
+//if(!checkIfEatsFruit(curX,curY))
+//    removeTail();
+//else{
+//    makeNewFruit()
+//}
+//setTimeout(function(){
+//    if(fruit.length <1)
+//        makeNewFruit();
+//},3000);

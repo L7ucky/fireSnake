@@ -37,7 +37,6 @@ var myStartPoint = function(){
 
 var interval = setInterval(function(){
     moveSnake(direction);
-    console.log(speed);
 }, speed);
 
 var resetInterval = function(newSpeed){
@@ -71,8 +70,11 @@ var removeTail = function(){
 //    fb.fruit.child(x+':'+y).set('0F0');
 //};
 var changeLength = function(snap){
-    if(snap.val() > me.length)
+    console.log("Something happened...");
+    if(snap.val() > me.length) {
         grow = true;
+        console.log("I'm growing to be\t "+snap.val()+" pixels\tlong!")
+    }
 };
 var moveSnake = function(d){
     if(d == 'up'){
@@ -279,13 +281,19 @@ $(document).ready(function () {
             'length': me.length
         });
         fb.me.length = fb.me.child('length');
-        fb.me.length.on('child_changed',changeLength);
+        fb.me.length.on('value',changeLength);
         fb.me.onDisconnect().remove();
         fb.me.body.child(curX + ":" + curY).set(me.color);
         //Draw the fruit
 
-        fb.food.on('child_added',drawPixel);
-        fb.food.on('child_removed',clearPixel);
+        fb.food.on('child_added',function(snap){
+            console.log("FOOD UPDATE: \tFood drawn at: \t"+snap.key());
+            drawPixel(snap);
+        });
+        fb.food.on('child_removed',function(snap){
+            console.log("FOOD UPDATE: \tFood removed at: \t"+snap.key());
+            clearPixel(snap);
+        });
         fb.snakes.body.on('child_added', addSnake);
         fb.snakes.body.on('child_changed', changeSnake);
         fb.snakes.body.on('child_removed', removeSnake);
