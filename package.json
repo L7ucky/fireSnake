@@ -1,0 +1,28 @@
+{
+  "name": "fire_snake",
+  "version": "0.0.0",
+  "description": "A classic arcade game with an online Massive Multiplayer flavor ;) ",
+  "main": "serverApp.js",
+  "dependencies": {
+    "firebase": "^2.2.9",
+    "httpdispatcher": "^0.4.0"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "n/a"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://L7ucky@github.com/L7ucky/fireSnake.git"
+  },
+  "keywords": [
+    "snake",
+    "firebase"
+  ],
+  "author": "Andrew Hyte",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/L7ucky/fireSnake/issues"
+  },
+  "homepage": "https://github.com/L7ucky/fireSnake#readme"
+}

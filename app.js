@@ -6,13 +6,13 @@ var app = angular.module("mainApp", ["firebase"]);
 
 
 app.controller("mainApp", function($scope, $firebaseObject) {
-    var ref = new Firebase("https://firesnakes.firebaseio.com/");
-    console.log("Got inside the controller and about to attempt the data bind")
-    // download the data into a local object
-    $scope.data = $firebaseObject(ref);
-    var syncObject = $firebaseObject(ref);
-    syncObject.$bindTo($scope, "data");
-    // putting a console.log here won't work, see below
+    //var ref = new Firebase("https://firesnakes.firebaseio.com/");
+    //console.log("Got inside the controller and about to attempt the data bind")
+    //// download the data into a local object
+    //$scope.data = $firebaseObject(ref);
+    //var syncObject = $firebaseObject(ref);
+    //syncObject.$bindTo($scope, "data");
+    //// putting a console.log here won't work, see below
 });
 var direction = 'right';
 var curX=2;
@@ -73,6 +73,8 @@ var changeLength = function(snap){
     console.log("Something happened...");
     if(snap.val() > me.length) {
         grow = true;
+        me.length = snap.val();
+        document.getElementById('myScore').innerHTML = me.length;
         console.log("I'm growing to be\t "+snap.val()+" pixels\tlong!")
     }
 };
@@ -292,7 +294,7 @@ $(document).ready(function () {
         });
         fb.food.on('child_removed',function(snap){
             console.log("FOOD UPDATE: \tFood removed at: \t"+snap.key());
-            clearPixel(snap);
+           // clearPixel(snap);
         });
         fb.snakes.body.on('child_added', addSnake);
         fb.snakes.body.on('child_changed', changeSnake);

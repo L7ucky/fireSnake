@@ -205,3 +205,11 @@
 
 #gameInProgress {
     font-size: 14px; }
+#scoreCard{
+    float: right;
+}
+#myScore{
+    /*float: right;*/
+    display: inline-block;
+    margin-right: 20px;
+}

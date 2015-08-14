@@ -8,8 +8,8 @@ var Firebase = require('firebase');
 
 //Lets define a port we want to listen to
 const PORT=8080;
-const X_MAX_WINDOW = 60;
-const Y_MAX_WINDOW = 60;
+const X_MAX_WINDOW = 160;
+const Y_MAX_WINDOW = 140;
 
 //Lets use our dispatcher
 function handleRequest(request, response){

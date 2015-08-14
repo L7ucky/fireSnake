@@ -8,13 +8,15 @@
     <!-- AngularFire -->
     <script src="https://cdn.firebase.com/libs/angularfire/1.0.0/angularfire.min.js"></script>
     <script src="app.js"></script>
-    <link rel="stylesheet" type="text/css" href="example.css">
+    <link rel="stylesheet" type="text/css" href="style.css">
 </head>
-<body>
+<body ng-app="mainApp" ng-controller="mainController">
 <div class="l-demo-container">
     <canvas id="drawing-canvas" width="480" height="420"></canvas>
-    <button id="delete" >erase</button>
+    <button id="delete" ng-click="deleteAll">erase</button>
+    <div id="scoreCard"> Score: <div id="myScore">1</div></div>
 </div>
 <div id="colorholder"></div>
+
 </body>
 </html>
