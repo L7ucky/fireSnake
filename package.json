@@ -9,7 +9,7 @@
   },
   "devDependencies": {},
   "scripts": {
-    "start": "node serverAPP.js",
+    "start": "node serverApp.js",
     "test": "n/a"
   },
   "repository": {
