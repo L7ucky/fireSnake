@@ -11,6 +11,7 @@ const PORT=8080;
 const X_MAX_WINDOW = 160;
 const Y_MAX_WINDOW = 140;
 
+
 //Lets use our dispatcher
 function handleRequest(request, response){
     try {
@@ -55,6 +56,7 @@ dispatcher.onGet("/", function(req, res) {
 
 var fbRef = new Firebase("https://firesnakes.firebaseio.com/");
 var snakes ={};
+var map = {};
 var food = {};
 var refs = {};
 refs.snakes = fbRef.child("snakes");
@@ -83,7 +85,12 @@ var setUpSnakeRefs = function(fireSnake,key){
     refs.snakes[key].body = fireSnake.child("body");
     fireSnake.body.on("child_added", function(snap){
         //console.log(key+" moved to\t"+snap.key());
+        handleDeath(snap.key(), fireSnake, key);
+        map[snap.key()] = key;
         handleFood(snap.key(), fireSnake, key);
+    });
+    fireSnake.body.on("child_removed", function(snap){
+        delete map[snap.key()];
     });
     refs.snakes[key].onDisconnect(function(){
         fireSnake = null;
@@ -128,7 +135,7 @@ var handleFood = function(coords, fireSnake,snakeKey){
         console.log(snakeKey+" grows to be length: "+(snakes[snakeKey].length+1));
         fireSnake.child("length").set(snakes[snakeKey].length+1);
         refs.food.child(coords).remove();
-        food[coords] = null;
+        delete food[coords];
         makefood();
     }
 };
@@ -143,7 +150,7 @@ var makefood = function() {
     var color = "8F0";
     var spaceTaken = true;
     while(spaceTaken){
-        
+
         coords += Math.floor((1 + Math.random()) * 10000) % X_MAX_WINDOW;
         coords += ":";
         coords += Math.floor((1 + Math.random()) * 10000) % Y_MAX_WINDOW;
@@ -155,12 +162,24 @@ var makefood = function() {
     food[coords] = color;
     return coords;
 };
-//if(!checkIfEatsFruit(curX,curY))
-//    removeTail();
-//else{
-//    makeNewFruit()
-//}
-//setTimeout(function(){
-//    if(fruit.length <1)
-//        makeNewFruit();
-//},3000);
+
+var handleDeath = function(coords, fireSnake,snakeKey){
+    if(checkIfDies(coords, snakeKey)){
+        console.log(snakeKey+" ran into "+map[coords]+" at: "+coords);
+
+        fireSnake.child("death").set(messages.ranIntoAnotherSnake);
+    }
+};
+var checkIfDies = function(coords, snakeKey){
+    if(map[coords]){
+        if(map[coords]!= snakeKey) {
+            console.log(map);
+            return true;
+        }
+    }
+    return false;
+};
+
+var messages = {
+    ranIntoAnotherSnake:"You died because you ran into another snake"
+};
